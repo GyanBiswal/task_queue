@@ -1,20 +1,21 @@
-from pydantic import BaseModel
-from typing import Optional
 from enum import Enum
+from typing import Optional
+from pydantic import BaseModel
 
 
 class TaskStatus(str, Enum):
-    PENDING = "pending"
-    RUNNING = "running"
-    DONE = "done"
-    FAILED = "failed"
-    DEAD = "dead"           # exhausted all retries → sent to DLQ
+    SCHEDULED = "scheduled"   # Waiting for run_at timestamp to pass
+    PENDING   = "pending"     # Ready in queue for immediate pickup
+    RUNNING   = "running"     # Actively being processed by a worker node
+    DONE      = "done"        # Finished successfully
+    FAILED    = "failed"      # Temporary error state before retry logic kicks in
+    DEAD      = "dead"        # Exhausted all retries -> Moved to Dead Letter Queue (DLQ)
 
 
 class Priority(str, Enum):
-    HIGH = "high"
+    HIGH   = "high"
     MEDIUM = "medium"
-    LOW = "low"
+    LOW    = "low"
 
 
 class Task(BaseModel):
@@ -25,6 +26,7 @@ class Task(BaseModel):
     priority: Priority = Priority.MEDIUM
     max_retries: int = 3
     retry_count: int = 0
+    run_at: Optional[str] = None   # ISO timestamp string. None indicates immediate processing.
     result: Optional[str] = None
     error: Optional[str] = None
     created_at: str

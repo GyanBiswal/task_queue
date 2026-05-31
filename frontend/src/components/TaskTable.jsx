@@ -7,6 +7,27 @@ function fmt(iso) {
   return new Date(iso).toLocaleTimeString()
 }
 
+// Sub-component: High-contrast Dark Countdown Telemetry
+function RunAt({ iso }) {
+  if (!iso || iso === 'null') {
+    return <span className="text-zinc-600 font-sans italic">immediate</span>
+  }
+
+  const target = new Date(iso)
+  const diff   = Math.round((target - Date.now()) / 1000)
+
+  if (diff > 0) {
+    return (
+      <div className="flex flex-col gap-0.5 leading-tight">
+        <span className="text-blue-400 font-bold tracking-wide">⏰ in {diff}s</span>
+        <span className="text-[10px] text-zinc-500 font-semibold">{target.toLocaleTimeString()}</span>
+      </div>
+    )
+  }
+  
+  return <span className="text-zinc-400 font-semibold">{target.toLocaleTimeString()}</span>
+}
+
 export default function TaskTable({ tasks }) {
   const sorted = [...tasks].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
@@ -28,34 +49,50 @@ export default function TaskTable({ tasks }) {
               <th className="px-6 py-4">Priority</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 text-center">Retries Run</th>
+              <th className="px-6 py-4">Schedule Frame</th>
               <th className="px-6 py-4">Dispatched</th>
-              <th className="px-6 py-4">Mutation</th>
               <th className="px-6 py-4">Trace Output</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-900 font-mono text-zinc-300">
             {sorted.map(task => (
-              <tr key={task.id} className="hover:bg-zinc-900/30 transition-colors duration-700">
+              <tr key={task.id} className="hover:bg-zinc-900/30 transition-colors duration-200">
+                
+                {/* Task Name & UUID Block */}
                 <td className="px-6 py-4">
                   <div className="font-bold text-white font-sans text-xs">{task.name}</div>
-                  <div className="text-[10px] text-zinc-600 mt-0.5 tracking-tight">
+                  <div className="text-[10px] text-zinc-600 mt-0.5 tracking-tight select-all">
                     {task.id}
                   </div>
                 </td>
+                
+                {/* Priority Field */}
                 <td className="px-6 py-4 whitespace-nowrap text-[11px]">
-                  <span className={`font-bold ${PRIORITY_COLOR[task.priority] ?? 'text-zinc-400'}`}>
+                  <span className={`font-bold uppercase tracking-wider ${PRIORITY_COLOR[task.priority] ?? 'text-zinc-400'}`}>
                     {task.priority}
                   </span>
                 </td>
+                
+                {/* Status Badge Component */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <StatusBadge status={task.status} />
                 </td>
+                
+                {/* Retry Tracker Fraction */}
                 <td className="px-6 py-4 whitespace-nowrap text-center text-xs text-white font-bold tabular-nums">
                   {task.retry_count} <span className="text-zinc-700 mx-0.5">/</span> {task.max_retries}
                 </td>
+                
+                {/* Run At Chrono Cell */}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <RunAt iso={task.run_at} />
+                </td>
+                
+                {/* Base Ingestion Time */}
                 <td className="px-6 py-4 whitespace-nowrap text-zinc-500">{fmt(task.created_at)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-zinc-500">{fmt(task.updated_at)}</td>
-                <td className="px-6 py-4 max-w-[240px]">
+                
+                {/* Operational Execution Logs Output */}
+                <td className="px-6 py-4 max-w-[200px]">
                   <div className="truncate text-xs">
                     {task.result && task.result !== 'null' ? (
                       <span className="text-emerald-400 font-semibold">{task.result}</span>
@@ -66,6 +103,7 @@ export default function TaskTable({ tasks }) {
                     )}
                   </div>
                 </td>
+                
               </tr>
             ))}
           </tbody>
